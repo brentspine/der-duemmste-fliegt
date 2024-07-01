@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Overlay</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            /*width: {{ width }}px;*/
+            height: {{ height }}px;
+            /*max-height: {{ height }}px;*/
+            display: flex;
+            /*justify-content: center;
+            align-items: center;*/
+            align-items: flex-start;
+            justify-content: flex-end;
+            flex-direction: column;
+            /* background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent black background */
+        }
+
+        #lives,
+        .row {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 80px;
+        }
+
+        #info {
+
+        }
+
+        #img {
+            height: 80px;
+            width: 80px;
+            margin-right: 10px;
+        }
+
+        #img img {
+            border-radius: 50%;
+            max-height:100%; max-width:100%;
+        }
+
+        .text {
+            border-radius: 20px;
+            background-color: rgba(128, 128, 128, 0.8);
+            padding: 8px 16px;
+            color: white;
+            font-size: 32px;
+        }
+
+        #name {
+            margin-right: 12px;
+            background-color: unset!important;
+            font-size: 38px;
+        }
+
+        .heart,
+        .zero_heart {
+            height: 40px;
+            width: 40px;
+            padding: 0 6px;
+        }
+
+        .fill-img {
+            max-height:100%; max-width:100%;
+        }
+
+        #votes-container,
+        #votes {
+            margin-top: 0px;
+        }
+
+        .hand-raise {
+            height: 30px;
+            width: 30px;
+            margin-right: 7px;
+        }
+        .voted-for {
+            display: flex;
+            align-items: center;
+        }
+        .voted-by {
+            margin-left: 8px;
+        }
+    </style>
+    {% include 'jquery.html.twig' %}
+    <script>
+        {% for c in debug %}
+            console.log("{{ c }}");
+        {% endfor %}
+        function checkUpdate() {
+            fetch("{{ path('app_ajax_check_update', {'name': creator.name}) }}")
+                .then(response => response.json())
+                .then(data => {
+                    setTimeout(checkUpdate, 2000);
+                    if(data.lives.toString() !== localStorage.getItem('{{ creator.name }}_lives')) {
+                        localStorage.setItem('{{ creator.name }}_lives', data.lives);
+                        updateLives();
+                    }
+                    if(data.show_votes && localStorage.getItem('show_votes') === "false") {
+                        localStorage.setItem('{{ creator.name }}_votes', data.votes);
+                        localStorage.setItem('{{ creator.name }}_lives', data.lives);
+                        localStorage.setItem('show_votes', "true");
+                        updateVotes();
+                    }
+                    else if(!data.show_votes && localStorage.getItem('show_votes') === "true") {
+                        localStorage.setItem('{{ creator.name }}_votes', data.votes);
+                        localStorage.setItem('{{ creator.name }}_lives', data.lives);
+                        localStorage.setItem('show_votes', "false");
+                        updateVotes();
+                    }
+                    else if(data.voted_for == null) {
+                        if (localStorage.getItem('{{ creator.name }}_voted_for') !== "-1") {
+                            localStorage.setItem('{{ creator.name }}_voted_for', "-1");
+                            localStorage.setItem('{{ creator.name }}_votes', data.votes);
+                            localStorage.setItem('{{ creator.name }}_lives', data.lives);
+                            localStorage.setItem('show_votes', {{ show_votes ? "true" : "false"}});
+                            updateVotes();
+                        }
+                        localStorage.setItem('{{ creator.name }}_voted_for', "-1");
+                    }
+                    else if (data.voted_for.id.toString() !== localStorage.getItem('{{ creator.name }}_voted_for')) {
+                        localStorage.setItem('{{ creator.name }}_voted_for', data.voted_for.id);
+                        localStorage.setItem('{{ creator.name }}_votes', data.votes);
+                        localStorage.setItem('{{ creator.name }}_lives', data.lives);
+                        localStorage.setItem('show_votes', {{ show_votes ? "true" : "false"}});
+                        updateVotes();
+                    }
+                    else if(data.votes.toString() !== localStorage.getItem('{{ creator.name }}_votes')) {
+                        localStorage.setItem('{{ creator.name }}_votes', data.votes);
+                        localStorage.setItem('{{ creator.name }}_lives', data.lives);
+                        localStorage.setItem('show_votes', {{ show_votes ? "true" : "false"}});
+                        updateVotes();
+                    }
+                }).catch(error => {
+                    console.error('Error:', error);
+                    setTimeout(checkUpdate, 2000);
+                });
+        }
+
+        function updateLives() {
+            fetch("{{ path('app_ajax_lives_overlay', {'name': creator.name}) }}")
+                .then(response => response.text())
+                .then(data => {
+                    document.getElementById('lives').innerHTML = data;
+                });
+        }
+
+        function updateVotes() {
+            fetch("{{ path('app_ajax_votes_overlay', {'name': creator.name}) }}")
+                .then(response => response.text())
+                .then(data => {
+                    document.getElementById('votes').innerHTML = data;
+                });
+        }
+
+        $(function() {
+            checkUpdate();
+            localStorage.setItem('{{ creator.name }}_lives', {{ creator.lives }});
+            localStorage.setItem('{{ creator.name }}_votes', {{ creator.votedby|length }});
+            localStorage.setItem('{{ creator.name }}_voted_for', {{ (creator.votedFor == null) ? "-1" : creator.votedFor.id }});
+            localStorage.setItem('show_votes', {{ show_votes ? "true" : "false"}});
+        });
+    </script>
+</head>
+<body>
+    <div id="info" class="row">
+        {% include  'creator_info.html.twig' %}
+
+        <div id="lives">
+            {% include 'lives.html.twig' %}
+        </div>
+
+    </div>
+    <div id="votes">
+        {% include 'votes.html.twig' %}
+    </div>
+</body>
+</html>

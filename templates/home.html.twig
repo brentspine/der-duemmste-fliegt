@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Der Dümmste Fliegt</title>
+    <style>
+        body {
+            background-color: #222;
+            color: #fff;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .form-container {
+            background-color: #333;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: none;
+            background-color: #444;
+            color: #fff;
+            border-radius: 4px;
+            box-sizing: border-box;
+            transition: border-color 0.3s ease;
+        }
+
+        input[type="text"]:focus {
+            border-color: #007bff;
+        }
+
+        input[type="submit"] {
+            width: 100%;
+            padding: 10px;
+            border: none;
+            background-color: #007bff;
+            color: #fff;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        input[type="submit"]:hover {
+            background-color: #0056b3;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .error-message, .success-message {
+            padding: 7px 0 7px 7px;
+            margin-bottom: 8px;
+            font-size: 12px;
+            border-radius: 8px;
+        }
+
+        .error-message {
+            background-color: rgba(201, 67, 67, 0.4);
+            color: rgb(253, 47, 47);
+        }
+
+        .success-message {
+            background-color: rgba(7, 205, 83, 0.623);
+            color: rgb(46, 247, 32);
+        }
+    </style>
+    {% include 'jquery.html.twig' %}
+    <script>
+        function show_error(message) {
+            $('.success-message').hide();
+            $('.error-message').show('slow');
+            $('#error-text').text(message);
+        }
+
+        function show_success(message) {
+            $('.error-message').hide();
+            $('.success-message').show('slow');
+            $('#success-text').text(message);
+        }
+
+
+
+        $(function() {
+            $('form').submit(function(e) {
+                e.preventDefault();
+                var password = $('input[type="text"]').val();
+                $.post('{{ path('app_ajax_validate') }}', {auth: password}, function(data, status, jqXHR) {
+                    data = JSON.parse(jqXHR.responseText);
+                    if(data.error) {
+                        show_error(data.message);
+                        return false;
+                    }
+                    show_success(data.message);
+                    setCookie('Authorization', data.token, 7);
+                    localStorage.setItem('username', data.name);
+                    window.location.href = '{{ path('app_dashboard') }}';
+                }).fail(function(jqXHR) {
+                    data = JSON.parse(jqXHR.responseText);
+                    show_error(data.message);
+                    return false;
+                });
+            });
+            return false;
+        });
+    </script>
+    <script src="{{ asset('/scripts/functions.js') }}"></script>
+</head>
+<body>
+
+<div class="form-container">
+    <form>
+        <div class="error-message" style="display: none;">
+            <b>ERROR: </b>
+            <span id="error-text">Fehler</span>
+            <b style="padding: 0 0.6rem; float: right; cursor: pointer; font-size: 14px;" onclick="$(this).parent().hide(`slow`)" undefined="">×</b>
+        </div>
+        <div class="success-message" style="display: none;">
+            <b>SUCCESS: </b>
+            <span id="success-text">Fehler</span>
+            <b style="padding: 0 0.6rem; float: right; cursor: pointer; font-size: 14px;" onclick="$(this).parent().hide(`slow`)" undefined="">×</b>
+        </div>
+        <input type="text" placeholder="Gebe dein Passwort ein">
+        <input type="submit" value="Submit">
+    </form>
+</div>
+
+</body>
+</html>

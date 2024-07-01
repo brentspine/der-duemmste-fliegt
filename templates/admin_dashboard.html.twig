@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background-color: #222;
+        }
+        h1 {
+            margin-top: 50px;
+            color: white;
+        }
+        button.success-btn {
+            background-color: #4CAF50;
+            transition: background-color 0.3s;
+        }
+        button.danger-btn {
+            background-color: #f44336; /* Alternate color for selected option */
+        }
+        button.danger-btn:hover {
+            background-color: #d32f2f; /* Alternate color for selected option */
+        }
+        button.success-btn:hover {
+            background-color: #45a049;
+        }
+        .success-btn,
+        .danger-btn,
+        .submit-btn {
+            margin-top: 30px;
+            padding: 10px 40px;
+            font-size: 18px;
+            border-radius: 5px;
+            cursor: pointer;
+            color: white;
+            border: none;
+            transition: background-color 0.3s;
+        }
+        .submit-btn {
+            background-color: #008CBA;
+        }
+        .submit-btn:hover {
+            background-color: #0077A3;
+        }
+        .question {
+            display: flex;
+            flex-direction: column;
+            max-width: 800px;
+        }
+        .question span.header {
+            font-size: 24px;
+            color: #D0D2D6;
+            margin-bottom: 10px;
+        }
+        #question-answer,
+        #question-text {
+            font-size: 18px;
+            color: #D0D2D6;
+            margin-bottom: 15px;
+        }
+        .question-options {
+            display: flex;
+            justify-content: center;
+            min-width: 600px;
+        }
+        .question-options .button-container {
+            width: 50%;
+            display: flex;
+        }
+        .question-options .button-container.first {
+            justify-content: flex-end;
+        }
+        .question-options .button-container.second {
+            justify-content: flex-start;
+        }
+        .sub-header {
+            color: white;
+            margin-top: 50px;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+
+        .votes .table {
+            color: #D0D2D6;
+            min-width: 400px;
+            max-width: 800px;
+        }
+        .votes .table td {
+            padding: 10px;
+        }
+        .votes .header,
+        .votes .row {
+            display: flex;
+            justify-content: space-between;
+        }
+        .votes .header {
+            font-size: 20px;
+            font-weight: bold;
+            border-bottom: 1px solid #D0D2D6;
+        }
+        .votes .row {
+            padding: 10px 0;
+        }
+
+        .add-question {
+            margin-bottom: 30px;
+        }
+        .add-question input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: none;
+            background-color: #444;
+            color: #fff;
+            border-radius: 4px;
+            box-sizing: border-box;
+            transition: border-color 0.3s ease;
+        }
+
+        .add-question input[type="text"]:focus {
+            border-color: #007bff;
+        }
+
+        .add-question input[type="submit"] {
+            width: 100%;
+            padding: 10px;
+            border: none;
+            background-color: #007bff;
+            color: #fff;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+    </style>
+    {% include 'jquery.html.twig' %}
+</head>
+<body>
+<h1>Admin Dashboard :P</h1>
+<div class="question-container">
+    <div class="question">
+        <span class="header">Frage</span>
+        <span id="question-text">L&auml;dt...</span>
+        <span class="header">Antwort</span>
+        <span id="question-answer">L&auml;dt...</span>
+    </div>
+    <div>
+        <button class="submit-btn" id="next-question">N&auml;chste Frage</button>
+        <button class="danger-btn" id="skip-question" style="margin-left: 5px">Frage Skippen</button>
+    </div>
+    <div class="question-options">
+        <div class="button-container first">
+            <button class="danger-btn" id="allow-duplicates">Duplikate nicht erlaubt</button>
+        </div>
+        <div class="button-container second" style="margin-left: 10px">
+            <button class="danger-btn" id="reset-questions">Fragen zurücksetzen</button>
+        </div>
+    </div>
+</div>
+<h2 class="sub-header">Einstellungen</h2>
+<div class="settings">
+    <div class="row">
+        <div class="button-container first">
+            {% if allow_voting %}
+                <button class="success-btn" id="allow-voting">Voten erlaubt</button>
+            {% else %}
+                <button class="danger-btn" id="allow-voting">Voten nicht erlaubt</button>
+            {% endif %}
+        </div>
+        <div class="button-container second" style="margin-left: 10px">
+            {% if show_votes %}
+                <button class="success-btn" id="reveal-votes">Votes sichtbar</button>
+            {% else %}
+                <button class="danger-btn" id="reveal-votes">Votes versteckt</button>
+            {% endif %}
+        </div>
+    </div>
+    <div class="row">
+        <div class="button-container first" style="margin-left: 10px">
+            <button class="danger-btn" id="reset-votes">Votes zurücksetzen</button>
+        </div>
+    </div>
+</div>
+<h2 class="sub-header" style="margin-bottom: 20px">Vote Übersicht</h2>
+{% include 'votes_overlay_admin.html.twig' %}
+<h2 class="sub-header" style="margin: 20px 0">Frage hinzufügen</h2>
+<div class="add-question">
+    <form id="add-question-form" method="post">
+        <input type="text" name="question" placeholder="Frage" required>
+        <input type="text" name="answer" placeholder="Antwort" required>
+        <button class="submit-btn" type="submit">Frage hinzufügen</button>
+    </form>
+</div>
+{% include 'footer.html.twig' %}
+
+
+<script>
+    // JavaScript code to handle option selection
+    const buttons = document.querySelectorAll('.button-container button');
+
+    buttons.forEach(button => {
+        button.addEventListener('click', () => {
+            buttons.forEach(btn => btn.classList.remove('selected'));
+            button.classList.add('selected');
+        });
+    });
+
+    function getStatusCodeMessage(statusCode) {
+        switch(statusCode) {
+            case 200:
+                return "200, OK";
+            case 201:
+                return "201, Created";
+            case 400:
+                return "400, Bad Request";
+            case 401:
+                return "401, Unauthorized";
+            case 403:
+                return "403, Forbidden";
+            case 404:
+                return "404, Not Found";
+            case 500:
+                return "500, Internal Server Error";
+            case 502:
+                return "502, Bad Gateway";
+            default:
+                return "Error " + statusCode;
+        }
+    }
+
+    function updateUserOverlay() {
+        $.get("{{ path('app_ajax_votes_overlay_admin') }}", function (data, status, jqXHR) {
+            $("#votes").html(data);
+        }).fail(function (jqXHR, status, error) {
+            data = JSON.parse(jqXHR.responseText);
+            show_toast(data.message, "red", 1500, true);
+        });
+    }
+
+    function update() {
+        $.get("{{ path('app_ajax_get_users') }}", function (data, status, jqXHR) {
+            var old_votes = JSON.parse(localStorage.getItem("user_votes"));
+            var changed = false;
+            for(let [user, old_vote] of Object.entries(old_votes)) {
+                // Find the user in the data
+                const user_data = data.find(u => u.name === user);
+                const new_vote = user_data.voted_for == null ? "None" : user_data.voted_for.name;
+                if(old_vote === new_vote) {
+                    continue;
+                }
+                console.log("Vote changed for user", user, "from", old_vote, "to", new_vote);
+                changed = true;
+                old_votes[user] = new_vote;
+            }
+            if(changed) {
+                localStorage.setItem("user_votes", JSON.stringify(old_votes));
+                updateUserOverlay();
+            }
+            setTimeout(update, 2500);
+        }).fail(function (jqXHR, status, error) {
+            show_toast(getStatusCodeMessage(error), "red", 1500, true);
+            setTimeout(update, 2500);
+        });
+    }
+
+    function updateAllowDuplicatesButton() {
+        if(localStorage.getItem("admin_allow_duplicate_questions") === "true") {
+            $("#allow-duplicates").addClass("success-btn");
+            $("#allow-duplicates").removeClass("danger-btn");
+            $("#allow-duplicates").html("Duplikate erlaubt");
+        }
+        else {
+            $("#allow-duplicates").addClass("danger-btn");
+            $("#allow-duplicates").removeClass("success-btn");
+            $("#allow-duplicates").html("Duplikate nicht erlaubt");
+        }
+    }
+
+    function updateAllowVotingButton() {
+        if(localStorage.getItem("admin_allow_voting") === "true") {
+            $("#allow-voting").addClass("success-btn");
+            $("#allow-voting").removeClass("danger-btn");
+            $("#allow-voting").html("Voten erlaubt");
+        }
+        else {
+            $("#allow-voting").addClass("danger-btn");
+            $("#allow-voting").removeClass("success-btn");
+            $("#allow-voting").html("Voten nicht erlaubt");
+        }
+    }
+
+    function updateRevealVotesButton() {
+        if(localStorage.getItem("admin_reveal_votes") === "true") {
+            $("#reveal-votes").addClass("success-btn");
+            $("#reveal-votes").removeClass("danger-btn");
+            $("#reveal-votes").html("Votes sichtbar");
+        }
+        else {
+            $("#reveal-votes").addClass("danger-btn");
+            $("#reveal-votes").removeClass("success-btn");
+            $("#reveal-votes").html("Votes versteckt");
+        }
+    }
+
+    function next_question() {
+        $.post("{{ path('app_ajax_next_question') }}/"+localStorage.getItem("admin_allow_duplicate_questions"), function (data, status, jqXHR) {
+            $("#question-text").html(data.text);
+            $("#question-answer").html(data.answer);
+            localStorage.setItem("current_question_id", data.id);
+        }).fail(function (jqXHR, status, error) {
+            data = JSON.parse(jqXHR.responseText);
+            $("#question-text").html(data.text);
+            $("#question-answer").html(data.answer);
+            localStorage.setItem("current_question_id", data.id);
+        });
+    }
+
+    function set_to_current_question() {
+        $.get("{{ path('app_ajax_current_question') }}", function (data, status, jqXHR) {
+            $("#question-text").html(data.text);
+            $("#question-answer").html(data.answer);
+            localStorage.setItem("current_question_id", data.id);
+        }).fail(function (jqXHR, status, error) {
+            next_question();
+        });
+    }
+
+    function change_setting(type, val) {
+        $.post("{{ path('app_ajax_change_setting', {"name":"thequestiontype","val":"thequestionval"}) }}".replace("thequestiontype", type).replace("thequestionval", val), {}, function (data, status, jqXHR) {
+            show_toast(data.message, "green", 1500, true);
+        }).fail(function (jqXHR, status, error) {
+            data = JSON.parse(jqXHR.responseText);
+            show_toast(data.message, "red", 1500, true);
+        });
+    }
+
+    $(function () {
+        if(localStorage.getItem("admin_allow_duplicate_questions") === null) {
+            localStorage.setItem("admin_allow_duplicate_questions", "false");
+        }
+        localStorage.setItem("admin_allow_voting", {{ allow_voting ? "true" : "false" }});
+        localStorage.setItem("admin_reveal_votes", {{ show_votes ? "true" : "false" }});
+        {# Store the users array in the localstorage #}
+        const user_votes = {
+            {% for user in users %}
+                "{{ user.name }}": "{{ user.votedFor == null ? "None" : user.votedFor.name }}",
+            {% endfor %}
+        }
+        localStorage.setItem("user_votes", JSON.stringify(user_votes));
+        updateAllowDuplicatesButton();
+        updateAllowVotingButton();
+        updateRevealVotesButton();
+        set_to_current_question();
+        $("#allow-duplicates").click(function () {
+            if(localStorage.getItem("admin_allow_duplicate_questions") === "true") {
+                localStorage.setItem("admin_allow_duplicate_questions", "false");
+            }
+            else {
+                localStorage.setItem("admin_allow_duplicate_questions", "true");
+            }
+            updateAllowDuplicatesButton();
+        });
+        $("#next-question").click(function () {
+            next_question();
+        });
+        $("#skip-question").click(function () {
+            const current_question_id = localStorage.getItem("current_question_id");
+            if(current_question_id === null || current_question_id === undefined || current_question_id === "-1") {
+                show_toast("Keine Fragen übrig", "red", 1500, true);
+                return;
+            }
+            $.post("{{ path('app_ajax_reset_question', {"id":"question_id_here"}) }}".replace("question_id_here", current_question_id), function (data, status, jqXHR) {
+                show_toast("Frage wurde übersprungen", "green", 1500, true);
+            }).fail(function (jqXHR, status, error) {
+                data = JSON.parse(jqXHR.responseText);
+                show_toast(data.message, "red", 1500, true);
+            });
+            next_question();
+        });
+        $("#reset-questions").click(function () {
+            $.post("{{ path('app_ajax_reset_questions') }}", function (data, status, jqXHR) {
+                show_toast("Fragen wurden zurückgesetzt", "green", 1500, true);
+            }).fail(function (jqXHR, status, error) {
+                data = JSON.parse(jqXHR.responseText);
+                show_toast(data.message, "red", 1500, true);
+            });
+            next_question();
+        });
+
+
+        $("#allow-voting").click(function () {
+            if(localStorage.getItem("admin_allow_voting") === "true") {
+                localStorage.setItem("admin_allow_voting", "false");
+            }
+            else {
+                localStorage.setItem("admin_allow_voting", "true");
+            }
+            updateAllowVotingButton();
+            change_setting("allow_voting", localStorage.getItem("admin_allow_voting") === "true" ? "true" : "false");
+        });
+        $("#reveal-votes").click(function () {
+            if(localStorage.getItem("admin_reveal_votes") === "true") {
+                localStorage.setItem("admin_reveal_votes", "false");
+            }
+            else {
+                localStorage.setItem("admin_reveal_votes", "true");
+            }
+            updateRevealVotesButton();
+            change_setting("show_votes", localStorage.getItem("admin_reveal_votes") === "true" ? "true" : "false");
+        });
+        $("#reset-votes").click(function () {
+            $.post("{{ path('app_ajax_reset_votes') }}", function (data, status, jqXHR) {
+                show_toast("Votes wurden zurückgesetzt", "green", 1500, true);
+            }).fail(function (jqXHR, status, error) {
+                data = JSON.parse(jqXHR.responseText);
+                show_toast(data.message, "red", 1500, true);
+            });
+        });
+
+        $("#add-question-form").submit(function (e) {
+            e.preventDefault();
+            const question = $("input[name='question']").val();
+            const answer = $("input[name='answer']").val();
+            $.post("{{ path('app_ajax_add_question') }}", {question: question, answer: answer}, function (data, status, jqXHR) {
+                show_toast("Frage hinzugefügt", "green", 1500, true);
+            }).fail(function (jqXHR, status, error) {
+                data = JSON.parse(jqXHR.responseText);
+                show_toast(data.message, "red", 1500, true);
+            });
+            return false;
+        });
+
+        update();
+    })
+</script>
+{% include 'toasts.html.twig' %}
+</body>
+</html>

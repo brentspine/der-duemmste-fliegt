@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vote Dashboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            background-color: #222;
+            min-height: 97vh;
+        }
+        h1 {
+            margin-top: 50px;
+            color: white;
+        }
+        .button-container {
+            margin-top: 20px;
+            max-width: 800px;
+        }
+        .button-container button {
+            margin: 10px;
+            padding: 10px 20px;
+            font-size: 16px;
+            border: none;
+            background-color: #4CAF50;
+            color: white;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+        .button-container button.selected {
+            background-color: #f44336; /* Alternate color for selected option */
+        }
+        .button-container button.selected:hover {
+            background-color: #d32f2f; /* Alternate color for selected option */
+        }
+        .button-container button:hover {
+            background-color: #45a049;
+        }
+        #submit-btn {
+            margin-top: 30px;
+            padding: 10px 40px;
+            font-size: 18px;
+            background-color: #008CBA;
+            border-radius: 5px;
+            cursor: pointer;
+            color: white;
+            border: none;
+            transition: background-color 0.3s;
+        }
+        #submit-btn:hover {
+            background-color: #0077A3;
+        }
+
+        #user-info {
+            margin-top: 20px;
+            color: rgb(128, 128, 128);
+            font-size: 12px;
+            display: flex;
+            flex-direction: column;
+        }
+    </style>
+    {% include 'jquery.html.twig' %}
+</head>
+<body>
+<h1>Vote Options</h1>
+<div class="button-container">
+    {% for user in users %}
+        {% if user.id >= 2 %}
+            <button data-userid="{{ user.id }}" data-username="{{ user.name }}">{{ user.name|capitalize }}</button>
+        {% endif %}
+    {% endfor %}
+</div>
+<button id="submit-btn">Submit Vote</button>
+<div id="user-info">
+    <div >
+        Your vote: <span id="vote">{{ creator.votedFor == null ? "None" : creator.votedFor.name}}</span>
+    </div>
+    <div>
+        Logged in as: <span id="username">{{ creator.name }}</span>
+    </div>
+</div>
+<div class="flex-fill"></div>
+{% include 'footer.html.twig' %}
+
+<script src="{{ asset('/scripts/functions.js') }}"></script>
+<script>
+    // JavaScript code to handle option selection
+    const buttons = document.querySelectorAll('.button-container button');
+
+    buttons.forEach(button => {
+        button.addEventListener('click', () => {
+            if (button.classList.contains('selected')) {
+                button.classList.remove('selected');
+                return;
+            }
+            buttons.forEach(btn => btn.classList.remove('selected'));
+            button.classList.add('selected');
+        });
+    });
+
+    function update() {
+        $.get("{{ path('app_ajax_check_update', {'name':creator.name}) }}", function(data, status, jqXHR) {
+            data = JSON.parse(jqXHR.responseText);
+            if($('#vote').text() !== 'None' && data.voted_for === null) {
+                // Remove all selected classes
+                buttons.forEach(btn => btn.classList.remove('selected'));
+            }
+
+            if (data.voted_for !== null) {
+                $('#vote').text(data.voted_for.name);
+            } else {
+                $('#vote').text("None");
+            }
+            $('#username').text(data.name);
+            setTimeout(update, 1000)
+        }).fail(function(jqXHR) {
+            show_error("Fehler beim Updaten, warte...", "red", 2000, false)
+            setTimeout(update, 5000);
+        });
+    }
+
+    $(function () {
+        update();
+        $('#submit-btn').click(function () {
+            const username = $('.button-container button.selected').attr("data-username");
+            if (username === undefined) {
+                show_toast("Please select an option", "red", 2000, true);
+                return false;
+            }
+            $.post('{{ path('app_ajax_vote', {"name":"username-to-replace"}) }}'.replace("username-to-replace", username), {}, function (jqXHR) {
+                data = JSON.parse(jqXHR.responseText);
+                show_toast(data.message, "green", 2000, true);
+                buttons.forEach(btn => btn.classList.remove('selected'));
+            }).fail(function(jqXHR) {
+                data = JSON.parse(jqXHR.responseText);
+                show_toast(data.message, "red", 2000, true);
+            });
+            return false;
+        });
+    })
+
+    function logout() {
+        // Just clear cookie "Authorization" and redirect to 'app_home'
+        eraseCookie("Authorization");
+        window.location.href = "{{ path('app_home') }}";
+    }
+</script>
+{% include 'toasts.html.twig' %}
+</body>
+</html>

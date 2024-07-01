@@ -1,0 +1,12 @@
+{% for i in 1..creator.lives %}
+    <div class="heart">
+        <img src="{{ asset('/images/heart.png') }}" alt="<3" class="fill-img">
+    </div>
+{% endfor %}
+{% if creator.lives < max_lives %}
+    {% for i in (creator.lives)..(max_lives-1) %}
+        <div class="zero_heart">
+            <img src="{{ asset('/images/zero_heart.png') }}" alt="" class="fill-img">
+        </div>
+    {% endfor %}
+{% endif %}

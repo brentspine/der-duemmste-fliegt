@@ -1,0 +1,19 @@
+<div class="votes" id="votes">
+    {# A table with 2 columns showing who has voted whom #}
+    <div class="table">
+        <div class="header">
+            <span class="first">Name</span>
+            <span class="second">Vote</span>
+        </div>
+        {% for user in users %}
+            <div class="row">
+                <span class="first">{{ user.name|capitalize }}</span>
+                {% if user.votedFor == null %}
+                    <span class="second"> - </span>
+                {% else %}
+                    <span class="second">{{ user.votedFor.name|capitalize }}</span>
+                {% endif %}
+            </div>
+        {% endfor %}
+    </div>
+</div>

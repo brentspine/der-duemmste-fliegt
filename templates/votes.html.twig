@@ -1,0 +1,11 @@
+<div id="votes-container" class="row" {% if not show_votes %} style="display: none!important;" {% endif %}>
+    <span class="text voted-for">
+        <div class="hand-raise">
+            <img src="{{ asset('/images/hand_raised.png') }}" alt="" class="fill-img">
+        </div>
+        {{ (creator.votedFor == null) ? "Niemand" : creator.votedFor.name|capitalize }}
+    </span>
+    <span class="text voted-by">
+        {{ creator.votedBy|length }} Votes
+    </span>
+</div>

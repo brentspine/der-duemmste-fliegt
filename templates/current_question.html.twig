@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Current Question</title>
+    <style>
+        span {
+            color: {{ color == null ? 'white' : color }};
+            font-family: {{ font_family == null ? "Times New Roman" : font_family }}, serif;
+            font-size: {{ font_size == null ? "24px" : font_size }};
+            font-weight: {{ font_weight == null ? "bold" : font_weight }};
+            float: {{ float == null ? "right" : float }};
+        }
+    </style>
+    <script>
+        function update() {
+            fetch("{{ path("app_ajax_current_question") }}")
+                .then(response => response.json())
+                .then(data => {
+                    const question = document.querySelector("span");
+
+                    if(data.text.toLowerCase().includes("buchstabiere"))
+                        question.textContent = "Buchstabiere das Wort ??? (AntiCheat, deshalb wird die Frage nicht angezeigt)";
+                    else
+                        question.textContent = data.text;
+                    update();
+                }).catch(() => update());
+        }
+        update();
+    </script>
+</head>
+<body>
+    <span>
+        {% if 'buchstabiere' in question.text|lower %}
+            Buchstabiere das Wort ??? (AntiCheat, deshalb wird die Frage nicht angezeigt)
+        {% else %}
+            {{ question.text }}
+        {% endif %}
+    </span>
+</body>
+</html>
