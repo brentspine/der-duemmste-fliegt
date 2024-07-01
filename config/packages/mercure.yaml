@@ -1,0 +1,10 @@
+mercure:
+    hubs:
+        default:
+            url: https://localhost:3000/hub
+            jwt:
+                publish: ['{creator}/lives']
+                subscribe: ['{creator}/lives']
+                secret: '7Zwlc5HLAeinibFdGzm72fVgot2ADnEq'
+                algorithm: 'hmac.sha256'
+                value: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJtZXJjdXJlIjp7InB1Ymxpc2giOlsiKiJdfSwiaWF0IjoxNzE0NzU1NTQ4fQ.ezgNciQfmmH0n5mCqZI1eLeqekG3NRjMSr4fRj81Mck'
