@@ -22,3 +22,10 @@
         text-decoration: none;
     }
 </style>
+<script>
+    function logout() {
+        // Just clear cookie "Authorization" and redirect to 'app_home'
+        eraseCookie("Authorization");
+        window.location.href = "{{ path('app_home') }}";
+    }
+</script>
