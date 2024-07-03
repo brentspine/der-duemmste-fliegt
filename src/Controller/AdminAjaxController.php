@@ -24,7 +24,7 @@ class AdminAjaxController extends AbstractController
         $auth = $request->cookies->get("Authorization");
         $user = $userValidatorService->checkUser($auth);
         if($user instanceof Response) return $user;
-        if($user->getId() >= 2) return new JsonResponse(["message" => "Error, not admin"], 403);
+        if($user->getId() >= 2) return new JsonResponse(["message" => "Fehler, keine Berechtigungen"], 403);
         $val = $val == "true" ? "1" : ($val == "false" ? "0" : $val);
         $entityManager->getRepository(GlobalSetting::class)->findOneBy(["name" => $name])->setValue($val);
         $entityManager->flush();
@@ -37,7 +37,7 @@ class AdminAjaxController extends AbstractController
         $auth = $request->cookies->get("Authorization");
         $user = $userValidatorService->checkUser($auth);
         if($user instanceof Response) return $user;
-        if($user->getId() >= 2) return new JsonResponse(["message" => "Error, not admin"], 403);
+        if($user->getId() >= 2) return new JsonResponse(["message" => "Fehler, keine Berechtigungen"], 403);
         $entityManager->getRepository(GlobalSetting::class)->findOneBy(["name" => "show_votes"])->setValue("0");
         $entityManager->flush();
 
@@ -58,7 +58,7 @@ class AdminAjaxController extends AbstractController
         $auth = $request->cookies->get("Authorization");
         $user = $userValidatorService->checkUser($auth);
         if($user instanceof Response) return $user;
-        if($user->getId() >= 2) return new Response("Error, not admin", 403);
+        if($user->getId() >= 2) return new Response("Fehler, keine Berechtigungen", 403);
         $creator->setLives($creator->getLives() - 1);
 
         $entityManager->persist($creator);
@@ -75,7 +75,7 @@ class AdminAjaxController extends AbstractController
         $auth = $request->cookies->get("Authorization");
         $user = $userValidatorService->checkUser($auth);
         if($user instanceof Response) return $user;
-        if($user->getId() >= 2) return new Response("Error, not admin", 403);
+        if($user->getId() >= 2) return new Response("Fehler, keine Berechtigungen", 403);
         $creator->setLives($creator->getLives() + 1);
 
         $entityManager->persist($creator);
@@ -93,7 +93,7 @@ class AdminAjaxController extends AbstractController
         $auth = $request->cookies->get("Authorization");
         $user = $userValidatorService->checkUser($auth);
         if($user instanceof Response) return $user;
-        if($user->getId() >= 2) return new Response("Error, not admin", 403);
+        if($user->getId() >= 2) return new Response("Fehler, keine Berechtigungen", 403);
         # Find a random question
         $rsm = new ResultSetMapping();
         $rsm->addEntityResult(Question::class, 'q');
@@ -151,7 +151,7 @@ class AdminAjaxController extends AbstractController
         $auth = $request->cookies->get("Authorization");
         $user = $userValidatorService->checkUser($auth);
         if($user instanceof Response) return $user;
-        if($user->getId() >= 2) return new Response("Error, not admin", 403);
+        if($user->getId() >= 2) return new Response("Fehler, keine Berechtigungen", 403);
         $entityManager->createQueryBuilder()->update(Question::class, 'q')
             ->set('q.used', '0')
             ->getQuery()
@@ -166,9 +166,9 @@ class AdminAjaxController extends AbstractController
         $auth = $request->cookies->get("Authorization");
         $user = $userValidatorService->checkUser($auth);
         if($user instanceof Response) return $user;
-        if($user->getId() >= 2) return new Response("Error, not admin", 403);
+        if($user->getId() >= 2) return new Response("Fehler, keine Berechtigungen", 403);
         $question = $entityManager->getRepository(Question::class)->find($id);
-        if($question == null) return new JsonResponse(["message" => "Error, question not found"], 404);
+        if($question == null) return new JsonResponse(["message" => "Fehler, Frage nicht gefunden"], 404);
         $question->setUsed(false);
         $entityManager->persist($question);
         $entityManager->flush();
@@ -182,7 +182,7 @@ class AdminAjaxController extends AbstractController
         $auth = $request->cookies->get("Authorization");
         $user = $userValidatorService->checkUser($auth);
         if($user instanceof Response) return $user;
-        if($user->getId() >= 2) return new Response("Error, not admin", 403);
+        if($user->getId() >= 2) return new Response("Fehler, keine Berechtigungen", 403);
         $users = $entityManager->getRepository(Creator::class)->findAll();
         $r = [];
         foreach($users as $user) {
@@ -209,8 +209,8 @@ class AdminAjaxController extends AbstractController
         $auth = $request->cookies->get("Authorization");
         $user = $userValidatorService->checkUser($auth);
         if($user instanceof Response) return $user;
-        if($user->getId() >= 2) return new Response("Error, not admin", 403);
-        if(!isset($_POST["question"]) || !isset($_POST["answer"])) return new JsonResponse(["message" => "Error, missing question or answer"], 400);
+        if($user->getId() >= 2) return new Response("Fehler, keine Berechtigungen", 403);
+        if(!isset($_POST["question"]) || !isset($_POST["answer"])) return new JsonResponse(["message" => "Fehler, fehlender Fragentext oder Antwort"], 400);
         $text = $_POST["question"];
         $answer = $_POST["answer"];
         if(strlen($text) <= 5 || strlen($answer) < 1) return new JsonResponse(["message" => "Bitte gebe eine l&auml;ngere Antwort oder Frage ein"], 400);
@@ -220,6 +220,40 @@ class AdminAjaxController extends AbstractController
         $entityManager->persist($question);
         $entityManager->flush();
         return new JsonResponse(["message" => "Success, added question"], 200);
+    }
+
+    // Search question
+    #[Route('/ajax/search_question', name: 'app_ajax_search_question', methods: ['GET'])]
+    public function app_ajax_search_question(UserValidatorService $userValidatorService, Request $request, EntityManagerInterface $entityManager): Response
+    {
+        $auth = $request->cookies->get("Authorization");
+        $user = $userValidatorService->checkUser($auth);
+        if($user instanceof Response) return $user;
+        if($user->getId() >= 2) return new Response("Fehler, keine Berechtigungen", 403);
+        $text = $request->query->get("text");
+        $answer = $request->query->get("answer");
+        $id = $request->query->get("id");
+        if($text == null && $answer == null && $id == null) return new JsonResponse(["message" => "Fehler, fehlende Suchkriterien", "error" => true], 400);
+        $qb = $entityManager->getRepository(Question::class)->createQueryBuilder('q');
+        if($text) $qb->andWhere('q.text LIKE :text')->setParameter('text', "%$text%");
+        if($answer) $qb->andWhere('q.answer LIKE :answer')->setParameter('answer', "%$answer%");
+        if($id) $qb->andWhere('q.id = :id')->setParameter('id', $id);
+        // Set Limit
+        $qb->setMaxResults(50);
+        $questions = $qb->getQuery()->getResult();
+        if (count($questions) == 0) return new JsonResponse(["message" => "Fehler, keine Fragen gefunden", "error" => true], 404);
+        $r = [];
+        $r["error"] = false;
+        $r["message"] = "Success, found " . count($questions) . " questions";
+        $r["questions"] = [];
+        foreach($questions as $question) {
+            $r["questions"][] = [
+                'id' => $question->getId(),
+                'text' => $question->getText(),
+                'answer' => $question->getAnswer()
+            ];
+        }
+        return new JsonResponse($r, 200);
     }
 
 }

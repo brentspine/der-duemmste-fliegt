@@ -112,6 +112,8 @@
         .add-question {
             margin-bottom: 30px;
         }
+        .search-question input[type="number"],
+        .search-question input[type="text"],
         .add-question input[type="text"] {
             width: 100%;
             padding: 10px;
@@ -124,10 +126,17 @@
             transition: border-color 0.3s ease;
         }
 
+        .search-question input[type="text"]:focus,
+        .search-question input[type="number"]:focus,
+        .search-question input[type="text"]:focus-visible,
+        .search-question input[type="number"]:focus-visible,
+        .add-question input[type="text"]:focus-visible,
         .add-question input[type="text"]:focus {
-            border-color: #007bff;
+            outline: #007bff 1px solid;
+            outline-offset: 1px;
         }
 
+        .search-question input[type="submit"],
         .add-question input[type="submit"] {
             width: 100%;
             padding: 10px;
@@ -137,6 +146,107 @@
             border-radius: 4px;
             cursor: pointer;
             transition: background-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .results-container {
+            width: 90%;
+            max-width: 1200px;
+            margin: 20px auto;
+            /*border: 1px solid #007bff;*/
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            color: #f8f8f8;
+        }
+
+        .results-header {
+            display: grid;
+            grid-template-columns: 1fr 4fr 4fr;
+            background-color: #444;
+            padding: 10px;
+            font-weight: bold;
+        }
+
+        .results-body {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .results-row {
+            display: grid;
+            grid-template-columns: 1fr 4fr 4fr;
+            padding: 10px;
+            /*border-top: 1px solid #007bff;*/
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            position: relative;
+            color: #fafafa;
+        }
+
+        .results-row:nth-child(even) {
+            background-color: #343434;
+        }
+
+        .results-row:hover {
+            background-color: rgba(52, 52, 52, 0.5);
+        }
+        .results-row:hover:nth-child(even) {
+            background-color: rgba(52, 52, 52, 0.33);
+        }
+
+        .results-cell {
+            padding: 10px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .id {
+            text-align: center;
+            max-width: 60px;
+        }
+
+        .text, .answer {
+            text-align: left;
+        }
+
+        .results-details {
+            display: none;
+            grid-column: span 3;
+            /*background-color: #444;*/
+            background-color: rgba(248, 248, 248, 0);
+            /*border-top: 1px solid #007bff;*/
+            padding: 10px 22px;
+        }
+
+        .details-text, .details-answer {
+            margin: 10px 0;
+        }
+
+        @media (max-width: 768px) {
+            .results-header, .results-row {
+                grid-template-columns: 1fr;
+            }
+
+            .results-cell {
+                white-space: normal;
+                overflow: visible;
+            }
+
+            .results-cell.id {
+                font-weight: bold;
+            }
+
+            .results-cell.text::before, .results-cell.answer::before {
+                content: attr(data-label);
+                font-weight: bold;
+                display: block;
+                margin-bottom: 5px;
+            }
+
+            .results-cell.text {
+                margin-top: 10px;
+            }
         }
 
     </style>
@@ -190,18 +300,49 @@
 </div>
 <h2 class="sub-header" style="margin-bottom: 20px">Vote Übersicht</h2>
 {% include 'votes_overlay_admin.html.twig' %}
-<h2 class="sub-header" style="margin: 20px 0">Frage hinzufügen</h2>
+<h2 class="sub-header" style="margin: 60px 0 20px 0">Frage hinzufügen</h2>
 <div class="add-question">
     <form id="add-question-form" method="post">
-        <input type="text" name="question" placeholder="Frage" required>
-        <input type="text" name="answer" placeholder="Antwort" required>
+        <input type="text" name="question" placeholder="Frage" required autocomplete="off">
+        <input type="text" name="answer" placeholder="Antwort" required autocomplete="off">
         <button class="submit-btn" type="submit">Frage hinzufügen</button>
     </form>
+</div>
+<h2 class="sub-header" style="margin: 12px 0 4px 0">Frage suchen</h2>
+<div class="search-question" style="margin: 20px 0">
+    <form id="search-question-form" method="get">
+        <input type="number" name="id" placeholder="Fragen-ID" autocomplete="off" id="search-question-id-input">
+        <input type="text" name="text" placeholder="Frage" autocomplete="off" id="search-question-text-input">
+        <input type="text" name="answer" placeholder="Antwort" autocomplete="off" id="search-question-answer-input">
+        <button class="submit-btn" type="submit">Suchen</button>
+        <button class="danger-btn" type="button" id="search-question-reset" style="margin-left: 5px;">Reset</button>
+    </form>
+</div>
+<div class="results-container" id="search-question-result" style="display: none">
+    <div class="results-header">
+        <div class="results-cell id">ID</div>
+        <div class="results-cell text">Text</div>
+        <div class="results-cell answer">Answer</div>
+    </div>
+    <div class="results-body" id="search-question-result-body">
+
+    </div>
 </div>
 {% include 'footer.html.twig' %}
 
 
+{% include 'toasts.html.twig' %}
 <script>
+    function toggleDetails(row) {
+        const details = row.querySelector('.results-details');
+        if (details.style.display === 'block') {
+            details.style.display = 'none';
+        } else {
+            details.style.display = 'block';
+        }
+    }
+
+
     // JavaScript code to handle option selection
     const buttons = document.querySelectorAll('.button-container button');
 
@@ -350,7 +491,7 @@
         {# Store the users array in the localstorage #}
         const user_votes = {
             {% for user in users %}
-                "{{ user.name }}": "{{ user.votedFor == null ? "None" : user.votedFor.name }}",
+            "{{ user.name }}": "{{ user.votedFor == null ? "None" : user.votedFor.name }}",
             {% endfor %}
         }
         localStorage.setItem("user_votes", JSON.stringify(user_votes));
@@ -437,9 +578,83 @@
             return false;
         });
 
+        /*$("#search-question-form input[type='number']").change(function () {
+            const id = $(this).val();
+            if(id === "") {
+                return;
+            }
+            $.get("{{ path('app_ajax_search_question') }}/"+id, function (data, status, jqXHR) {
+                $("#question-text").html(data.text);
+                $("#question-answer").html(data.answer);
+            }).fail(function (jqXHR, status, error) {
+                data = JSON.parse(jqXHR.responseText);
+                show_toast(data.message, "red", 1500, true);
+            });
+        });*/
+
+
+        $("#search-question-form input[type='number']").change(function () {
+            const id = $(this).val();
+            if(id === "") {
+                return;
+            }
+            if(id <= 0)
+                $(this).val("1");
+        });
+
+        const question_result_row_template = `
+            <div class="results-row" onclick="toggleDetails(this)">
+                <div class="results-cell id">%%id%%</div>
+                <div class="results-cell text">%%text%%</div>
+                <div class="results-cell answer">%%answer%%</div>
+                <div class="results-details">
+                    <div class="details-text">%%text%%</div>
+                    <div class="details-answer">%%answer%%</div>
+                </div>
+            </div>`;
+        const question_result_notice = "<div style='width 100%; min-height: 50px; height: 100%; display: flex; align-items: center; justify-content: center;'>%%notice%%</div>";
+        $("#search-question-form").submit(function() {
+            const id = $("#search-question-id-input").val();
+            const text = $("#search-question-text-input").val();
+            const answer = $("#search-question-answer-input").val();
+            console.log(id, text, answer);
+            if (id === "" && text === "" && answer === "") {
+                show_toast("Bitte geben Sie mindestens eine Suchanfrage ein", "red", 1500, true);
+                return false;
+            }
+            $("#search-question-result").show(0);
+            $("#search-question-result-body").children().remove();
+            $("#search-question-result-body").html(question_result_notice.replaceAll("%%notice%%", "Lädt..."));
+            $.get("{{ path('app_ajax_search_question') }}", {id: id, text: text, answer: answer}, function (data, status, jqXHR) {
+                console.log(data);
+                const questions = data.questions;
+                $("#search-question-result-body").children().remove();
+                for(let i = 0; i < questions.length; i++) {
+                    const question = questions[i];
+                    const row = question_result_row_template
+                        .replaceAll("%%id%%", question.id)
+                        .replaceAll("%%text%%", question.text)
+                        .replaceAll("%%answer%%", question.answer);
+                    $("#search-question-result-body").append(row);
+                }
+            }).fail(function (jqXHR, status, error) {
+                data = JSON.parse(jqXHR.responseText);
+                // show_toast(data.message, "red", 1500, true);
+                $("#search-question-result-body").html(question_result_notice.replaceAll("%%notice%%", data.message));
+            });
+            return false;
+        });
+
+        $("#search-question-reset").click(function() {
+            $("#search-question-id-input").val("");
+            $("#search-question-text-input").val("");
+            $("#search-question-answer-input").val("");
+            $("#search-question-result").hide(0);
+            $("#search-question-result-body").children().remove();
+        });
+
         update();
-    })
+    });
 </script>
-{% include 'toasts.html.twig' %}
 </body>
 </html>
