@@ -65,17 +65,36 @@
             display: flex;
             flex-direction: column;
         }
+        #lives {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 10px;
+        }
+        .fill-img {
+            max-height:100%;
+            max-width:100%;
+        }
+        .heart, .zero_heart {
+            height: 10px;
+            width: 10px;
+            padding: 0 2px;
+        }
     </style>
     {% include 'jquery.html.twig' %}
 </head>
 <body>
 <h1>Vote Options</h1>
-<div class="button-container">
-    {% for user in users %}
-        {% if user.id >= 2 %}
-            <button data-userid="{{ user.id }}" data-username="{{ user.name }}">{{ user.name|capitalize }}</button>
-        {% endif %}
-    {% endfor %}
+<div class="button-container" id="vote-buttons">
+    {% if creator.lives > 0 %}
+        {% for user in users %}
+            {% if user.id >= 2 and user.lives > 0%}
+                <button data-userid="{{ user.id }}" data-username="{{ user.name }}">{{ user.name|capitalize }}</button>
+            {% endif %}
+        {% endfor %}
+    {% else %}
+        <h4 style="color: white;">Du bist leider ausgeschieden</h4>
+    {% endif %}
 </div>
 <button id="submit-btn">Submit Vote</button>
 <div id="user-info">
@@ -84,6 +103,11 @@
     </div>
     <div>
         Logged in as: <span id="username">{{ creator.name }}</span>
+    </div>
+    <div style="display: flex; justify-content: center">
+        <span>Leben: &nbsp;</span> <span id="lives">
+            {% include 'lives.html.twig' %}
+        </span>
     </div>
 </div>
 <div class="flex-fill"></div>
@@ -105,6 +129,15 @@
         });
     });
 
+    function updateLives() {
+        fetch("{{ path('app_ajax_lives_overlay', {'name': creator.name}) }}")
+            .then(response => response.text())
+            .then(data => {
+                document.getElementById('lives').innerHTML = data;
+            });
+    }
+    localStorage.setItem("creator_current_lives", {{ creator.lives }});
+
     function update() {
         $.get("{{ path('app_ajax_check_update', {'name':creator.name}) }}", function(data, status, jqXHR) {
             data = JSON.parse(jqXHR.responseText);
@@ -119,9 +152,25 @@
                 $('#vote').text("None");
             }
             $('#username').text(data.name);
+            if(data.lives <= 0 && localStorage.getItem("creator_current_lives") > 0) {
+                $('#vote-buttons').html('<h4 style="color: white;">Du bist leider ausgeschieden</h4>');
+            }
+            else if(data.lives > 0 && localStorage.getItem("creator_current_lives") <= 0) {
+                window.location.reload();
+                return;
+            }
+            if(data.lives > localStorage.getItem("creator_current_lives")) {
+                show_toast("Du hast ein Leben gewonnen", "green", 2000, false);
+                updateLives();
+            }
+            else if(data.lives < localStorage.getItem("creator_current_lives")) {
+                show_toast("Du hast ein Leben verloren", "red", 2000, false);
+                updateLives();
+            }
+            localStorage.setItem("creator_current_lives", data.lives);
             setTimeout(update, 1000)
         }).fail(function(jqXHR) {
-            show_error("Fehler beim Updaten, warte...", "red", 2000, false)
+            show_toast("Fehler beim Updaten, warte...", "red", 2000, false)
             setTimeout(update, 5000);
         });
     }

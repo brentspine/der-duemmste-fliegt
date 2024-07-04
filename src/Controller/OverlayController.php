@@ -55,7 +55,8 @@ class OverlayController extends AbstractController
         $users = $entityManager->getRepository(Creator::class)->findAll();
         return $this->render('dashboard.html.twig', [
             'users' => $users,
-            'creator' => $user
+            'creator' => $user,
+            'max_lives' => Constants::$MAX_LIVES,
         ]);
     }
 
