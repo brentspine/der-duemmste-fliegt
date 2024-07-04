@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\Constants;
 use App\Entity\Creator;
 use App\Entity\GlobalSetting;
 use App\Entity\Question;
@@ -59,14 +60,20 @@ class AdminAjaxController extends AbstractController
         $user = $userValidatorService->checkUser($auth);
         if($user instanceof Response) return $user;
         if($user->getId() >= 2) return new Response("Fehler, keine Berechtigungen", 403);
+        if($creator->getLives() <= 0) return new JsonResponse(["message" => "Fehler, keine Leben mehr"], 400);
         $creator->setLives($creator->getLives() - 1);
 
         $entityManager->persist($creator);
         $entityManager->flush();
 
         $lives = $creator->getLives();
-        $old_lives = $lives - 1;
-        return new Response("Success, removed live for '{$creator->getName()}' ({$old_lives} -> {$lives})");
+        $old_lives = $lives + 1;
+        $r = [];
+        $r["old_lives"] = $old_lives;
+        $r["new_lives"] = $lives;
+        $r["error"] = false;
+        $r["message"] = "Success, removed live for '{$creator->getName()}' ({$old_lives} -> {$lives})";
+        return new JsonResponse($r, 200);
     }
 
     #[Route('/ajax/{name}/add_live', name: 'app_ajax_add_live')]
@@ -76,6 +83,7 @@ class AdminAjaxController extends AbstractController
         $user = $userValidatorService->checkUser($auth);
         if($user instanceof Response) return $user;
         if($user->getId() >= 2) return new Response("Fehler, keine Berechtigungen", 403);
+        if($creator->getLives() >= Constants::$MAX_LIVES) return new JsonResponse(["message" => "Fehler, maximale Leben erreicht"], 400);
         $creator->setLives($creator->getLives() + 1);
 
         $entityManager->persist($creator);
@@ -83,7 +91,12 @@ class AdminAjaxController extends AbstractController
 
         $lives = $creator->getLives();
         $old_lives = $lives - 1;
-        return new Response("Success, added live for '{$creator->getName()}' ({$old_lives} -> {$lives})");
+        $r = [];
+        $r["old_lives"] = $old_lives;
+        $r["new_lives"] = $lives;
+        $r["error"] = false;
+        $r["message"] = "Success, added live for '{$creator->getName()}' ({$old_lives} -> {$lives})";
+        return new JsonResponse($r, 200);
     }
 
     #[Route('/ajax/next_question/{ignore_used}', name: 'app_ajax_next_question', requirements: ['ignore_used' => '^(true|false|1|0)$'])]

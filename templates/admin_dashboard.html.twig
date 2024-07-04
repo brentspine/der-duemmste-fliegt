@@ -249,6 +249,17 @@
             }
         }
 
+        /*#votes .header .first,*/
+        #votes .row .first {
+            flex-grow: 1;
+            text-align: left;
+        }
+        /*#votes .header .second,*/
+        #votes .row .second {
+            text-align: center;
+            padding-right: 25px;
+        }
+
     </style>
     {% include 'jquery.html.twig' %}
 </head>
@@ -333,6 +344,7 @@
 
 {% include 'toasts.html.twig' %}
 <script>
+    const max_lives = {{ max_lives }};
     function toggleDetails(row) {
         const details = row.querySelector('.results-details');
         if (details.style.display === 'block') {
@@ -387,6 +399,14 @@
 
     function update() {
         $.get("{{ path('app_ajax_get_users') }}", function (data, status, jqXHR) {
+            /*for(let user of data) {
+                const current_lives = parseInt($("#"+user.name+"-lives").html());
+                const new_lives = user.lives;
+                if(current_lives !== new_lives) {
+                    $("#"+user.name+"-lives").html(new_lives);
+                }
+            }*/
+
             var old_votes = JSON.parse(localStorage.getItem("user_votes"));
             var changed = false;
             for(let [user, old_vote] of Object.entries(old_votes)) {
@@ -480,6 +500,50 @@
             data = JSON.parse(jqXHR.responseText);
             show_toast(data.message, "red", 1500, true);
         });
+    }
+
+    function add_live(name) {
+        const old_lives = parseInt($("#"+name+"-lives").html());
+        if(old_lives >= max_lives) {
+            show_toast("Maximale Anzahl an Leben erreicht", "red", 1500, true);
+            return;
+        }
+
+        // Encode the name to ensure it's safe for use in a URL
+        const encodedName = encodeURIComponent(name);
+
+        // Generate the URL with the encoded name
+        const url = "{{ path('app_ajax_add_live', {name: 'xxnameplaceholderxx'}) }}".replace('xxnameplaceholderxx', encodedName);
+
+        $.post(url, function (data, status, jqXHR) {
+            // show_toast(data.message, "green", 1500, true);
+        }).fail(function (jqXHR, status, error) {
+            const data = JSON.parse(jqXHR.responseText);
+            // show_toast(data.message, "red", 1500, true);
+        });
+        $("#"+name+"-lives").html(old_lives+1);
+    }
+
+    function remove_live(name) {
+        const old_lives = parseInt($("#"+name+"-lives").html());
+        if(old_lives <= 0) {
+            show_toast("Minimale Anzahl an Leben erreicht", "red", 1500, true);
+            return;
+        }
+
+        // Encode the name to ensure it's safe for use in a URL
+        const encodedName = encodeURIComponent(name);
+
+        // Generate the URL with the encoded name
+        const url = "{{ path('app_ajax_remove_live', {name: 'xxnameplaceholderxx'}) }}".replace('xxnameplaceholderxx', encodedName);
+
+        $.post(url, function (data, status, jqXHR) {
+            // show_toast(data.message, "green", 1500, true);
+        }).fail(function (jqXHR, status, error) {
+            const data = JSON.parse(jqXHR.responseText);
+            // show_toast(data.message, "red", 1500, true);
+        });
+        $("#"+name+"-lives").html(parseInt($("#"+name+"-lives").html())-1);
     }
 
     $(function () {

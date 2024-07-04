@@ -48,6 +48,7 @@ class OverlayController extends AbstractController
                 'allow_voting' => $entityManager->getRepository(GlobalSetting::class)->findOneBy(["name" => "allow_voting"])->getValue() == "1",
                 'show_votes' => $entityManager->getRepository(GlobalSetting::class)->findOneBy(["name" => "show_votes"])->getValue() == "1",
                 'users' => $entityManager->getRepository(Creator::class)->findAll(),
+                'max_lives' => Constants::$MAX_LIVES,
             ]);
         }
         # Get all users
