@@ -107,5 +107,23 @@ class AjaxController extends AbstractController
         return new Response("Success, voted for '{$voted_for->getName()}' ({$old_votes} -> {$new_votes})");
     }
 
+    #[Route('/ajax/timer-status', name: 'app_ajax_timer_status')]
+    public function app_ajax_timer_status(EntityManagerInterface $entityManager): Response
+    {
+        $ending_at = $entityManager->getRepository(GlobalSetting::class)->findOneBy(["name" => "timer_ending_at"])->getValue();
+        $paused_at = $entityManager->getRepository(GlobalSetting::class)->findOneBy(["name" => "timer_paused_at"])->getValue();
+        $timer_last_seconds = $entityManager->getRepository(GlobalSetting::class)->findOneBy(["name" => "timer_last_seconds"])->getValue();
+        $real_ending_at = $paused_at == null ? $ending_at : ($ending_at + (time() - $paused_at));
+
+        $r = [];
+        $r['ending_at'] = (int)$real_ending_at;
+        $r['paused'] = $paused_at != null;
+        $r['paused_for'] = $paused_at != null ? time() - $paused_at : 0;
+        $r['last_seconds'] = $timer_last_seconds;
+        $r['current_time'] = time();
+
+        return new JsonResponse($r);
+    }
+
 
 }

@@ -112,6 +112,7 @@
         .add-question {
             margin-bottom: 30px;
         }
+        input,
         .search-question input[type="number"],
         .search-question input[type="text"],
         .add-question input[type="text"] {
@@ -126,6 +127,7 @@
             transition: border-color 0.3s ease;
         }
 
+        input:focus,
         .search-question input[type="text"]:focus,
         .search-question input[type="number"]:focus,
         .search-question input[type="text"]:focus-visible,
@@ -260,6 +262,52 @@
             padding-right: 25px;
         }
 
+        .timer-controls .buttons-container {
+            margin: 25px 0 10px 0;
+            display: flex;
+        }
+        .timer-controls span.start-wrapper {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 138px;
+        }
+        .timer-controls .start-wrapper button {
+            width: 130px;
+        }
+        .timer-controls .start-timer-confirm-container {
+            display: flex;
+            justify-content: left;
+        }
+        .timer-controls .start-timer-confirm-container button {
+            width: auto!important;
+            padding: 10px 8px;
+            font-size: 16px;
+        }
+        .timer-controls .start-wrapper input {
+            margin: 6px 0 0 0;
+        }
+        .timer-controls button {
+            margin: 6px 4px 0 4px;
+            width: 130px;
+        }
+        .timer-controls button#toggle-timer {
+            width: 130px;
+            padding-right: 0;
+            padding-left: 0;
+            text-align: center;
+        }
+        #timer-minutes {
+            width: 60px;
+            height: 41px;
+            font-size: 18px;
+        }
+        #timer-seconds {
+            width: 60px;
+            height: 41px;
+            font-size: 18px;
+        }
+
     </style>
     {% include 'jquery.html.twig' %}
     <script src="{{ asset('/scripts/functions.js') }}"></script>
@@ -296,7 +344,7 @@
                 <button class="danger-btn" id="allow-voting">Voten nicht erlaubt</button>
             {% endif %}
         </div>
-        <div class="button-container second" style="margin-left: 10px">
+        <div class="button-container second">
             {% if show_votes %}
                 <button class="success-btn" id="reveal-votes">Votes sichtbar</button>
             {% else %}
@@ -310,6 +358,26 @@
         </div>
     </div>
 </div>
+<h2 class="sub-header" style="margin-bottom: 20px">TIMER</h2>
+{% include 'timer_overlay.html.twig' with {'color': 'white', 'font_family': 'standard', 'font_size': '2.5rem', 'font_weight': 'bold', 'float': 'standard'} %}
+<div class="timer-controls">
+    <div class="buttons-container">
+        <span class="start-wrapper">
+            <button class="success-btn" id="start-timer" style="">Start</button>
+            <input type="number" id="timer-minutes" style="display: none">
+            <span id="timer-input-sep">:</span>
+            <input type="number" id="timer-seconds" style="display: none">
+        </span>
+        <button class="submit-btn" id="toggle-timer">Pause</button>
+        <button class="danger-btn" id="reset-timer">Reset</button>
+        <button class="danger-btn" id="stop-timer">Stop</button>
+    </div>
+    <div class="start-timer-confirm-container" id="start-timer-confirm-container" style="display: none">
+        <button class="success-btn" id="start-timer-confirm">Confirm</button>
+        <button class="danger-btn" id="start-timer-cancel">Cancel</button>
+    </div>
+</div>
+
 <h2 class="sub-header" style="margin-bottom: 20px">Vote Übersicht</h2>
 {% include 'votes_overlay_admin.html.twig' %}
 <h2 class="sub-header" style="margin: 60px 0 20px 0">Frage hinzufügen</h2>
@@ -345,6 +413,143 @@
 
 {% include 'toasts.html.twig' %}
 <script>
+    $(function() {
+        $("#start-timer").click(function() {
+            const minutes_element = $("#timer-minutes");
+            const seconds_element = $("#timer-seconds");
+            const timer_input_sep = $("#timer-input-sep");
+            const confirm_container_element = $("#start-timer-confirm-container");
+            const button = $(this);
+            minutes_element.show();
+            seconds_element.show();
+            timer_input_sep.show();
+            confirm_container_element.show();
+            button.hide();
+            const last_seconds = parseInt(localStorage.getItem('timer_last_seconds'));
+            const minutes = Math.floor(last_seconds / 60);
+            const seconds = last_seconds % 60;
+            minutes_element.val(minutes);
+            seconds_element.val(seconds);
+            /*
+            $.post("{{ path('app_ajax_timer_action', {'action': 'start'}) }}", function(data, status, jqXHR) {
+                show_toast(data.message, "green", 1500, true);
+            }).fail(function(jqXHR, status, error) {
+                data = JSON.parse(jqXHR.responseText);
+                show_toast(data.message, "red", 1500, true);
+            });
+             */
+        });
+
+        $("#start-timer-cancel").click(function() {
+            const minutes_element = $("#timer-minutes");
+            const seconds_element = $("#timer-seconds");
+            const timer_input_sep = $("#timer-input-sep");
+            const confirm_container_element = $("#start-timer-confirm-container");
+            const button = $("#start-timer");
+            minutes_element.hide();
+            seconds_element.hide();
+            timer_input_sep.hide();
+            confirm_container_element.hide();
+            button.show();
+        });
+
+        $("#start-timer-confirm").click(function() {
+            const minutes_element = $("#timer-minutes");
+            const seconds_element = $("#timer-seconds");
+            const timer_input_sep = $("#timer-input-sep");
+            const confirm_container_element = $("#start-timer-confirm-container");
+            const button = $("#start-timer");
+            const minutes = minutes_element.val();
+            const seconds = seconds_element.val();
+            if(minutes === "" || seconds === "") {
+                show_toast("Bitte geben Sie Minuten und Sekunden ein", "red", 1500, true);
+                return;
+            }
+            const total_seconds = parseInt(minutes) * 60 + parseInt(seconds);
+            $.get("{{ path('app_ajax_timer_action', {'action': 'start'}) }}", {seconds: total_seconds}, function(data, status, jqXHR) {
+                show_toast(data.message, "green", 1500, true);
+                confirm_container_element.hide();
+                button.show();
+                minutes_element.hide();
+                seconds_element.hide();
+                timer_input_sep.hide();
+                $("#toggle-timer").html("Resume");
+            }).fail(function(jqXHR, status, error) {
+                data = JSON.parse(jqXHR.responseText);
+                show_toast(data.message, "red", 1500, true);
+            });
+        });
+
+        $("#timer-minutes").change(function() {
+            const minutes = $(this).val();
+            if(minutes < 0) {
+                $(this).val(0);
+            }
+            if(minutes > 59) {
+                $(this).val(59);
+            }
+            return false;
+        });
+        $("#timer-seconds").change(function() {
+            const timer_seconds = $(this);
+            const timer_minutes = $("#timer-minutes");
+            const seconds = $(this).val();
+            if(seconds < 0) {
+                $(this).val(59);
+                timer_minutes.val(parseInt(timer_minutes.val()) - 1);
+            }
+            if(seconds > 59) {
+                $(this).val(0);
+                timer_minutes.val(parseInt(timer_minutes.val()) + 1);
+            }
+            return false;
+        });
+
+        if(localStorage.getItem('timer_paused') === "true") {
+            $("#toggle-timer").html("Resume");
+        }
+        $("#toggle-timer").click(function() {
+            if(localStorage.getItem('timer_paused') === "true") {
+                $("#toggle-timer").html("Pause");
+                $.post("{{ path('app_ajax_timer_action', {'action': 'resume'}) }}", function(data, status, jqXHR) {
+                    show_toast(data.message, "green", 1500, true);
+                }).fail(function(jqXHR, status, error) {
+                    data = JSON.parse(jqXHR.responseText);
+                    show_toast(data.message, "red", 1500, true);
+                });
+                return;
+            }
+            $("#toggle-timer").html("Resume");
+            $.post("{{ path('app_ajax_timer_action', {'action': 'pause'}) }}", function(data, status, jqXHR) {
+                show_toast(data.message, "green", 1500, true);
+            }).fail(function(jqXHR, status, error) {
+                data = JSON.parse(jqXHR.responseText);
+                show_toast(data.message, "red", 1500, true);
+            });
+        });
+
+        $("#reset-timer").click(function() {
+            $.post("{{ path('app_ajax_timer_action', {'action': 'reset'}) }}", function(data, status, jqXHR) {
+                show_toast(data.message, "green", 1500, true);
+                $("#toggle-timer").html("Pause");
+            }).fail(function(jqXHR, status, error) {
+                data = JSON.parse(jqXHR.responseText);
+                show_toast(data.message, "red", 1500, true);
+            });
+        });
+
+        $("#stop-timer").click(function() {
+            $.post("{{ path('app_ajax_timer_action', {'action': 'stop'}) }}", function(data, status, jqXHR) {
+                show_toast(data.message, "green", 1500, true);
+                $("#toggle-timer").html("Pause");
+            }).fail(function(jqXHR, status, error) {
+                data = JSON.parse(jqXHR.responseText);
+                show_toast(data.message, "red", 1500, true);
+            });
+        });
+
+    })
+
     const max_lives = {{ max_lives }};
     function toggleDetails(row) {
         const details = row.querySelector('.results-details');

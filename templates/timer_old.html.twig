@@ -1,0 +1,65 @@
+<script>
+    // On ready
+    const timer = document.querySelector("span");
+    document.addEventListener("DOMContentLoaded", function() {
+        /*{% if paused %}
+            document.querySelector("span").textContent = "Zeit abgelaufen!"
+        {% else %}
+            document.querySelector("span").textContent = updateSeconds({{ ending_at + paused_for }} - (Math.round(Date.now() / 1000)));
+        {% endif %}*/
+    });
+
+    //localStorage.setItem('paused', "{{ paused ? "true" : "false" }}");
+    //localStorage.setItem('paused_for', "{{ paused_for ? paused_for : 0 }}");
+    //localStorage.setItem('ending_at', "{{ ending_at ? ending_at : 0 }}");
+
+    function updateApi() {
+        fetch("{{ path("app_ajax_timer_status") }}")
+            .then(response => response.json())
+            .then(data => {
+                const timer = document.querySelector("span");
+                const oldPaused = localStorage.getItem('paused');
+                if ((oldPaused === "true") === data.paused && ((data.ending_at != null || data.ending_at > 0) && data.ending_at === parseInt(localStorage.getItem('ending_at'))))
+                    return;
+                if(data.ending_at <= (Math.round(Date.now() / 1000))) {
+                    timer.textContent = "Zeit abgelaufen!"
+                    localStorage.setItem('paused', "true");
+                    localStorage.setItem('paused_for', "0");
+                    localStorage.setItem('ending_at', "0");
+                    return;
+                }
+                localStorage.setItem('paused', data.paused ? "true" : "false");
+                localStorage.setItem('paused_for', data.paused_for ? data.paused_for : 0);
+                localStorage.setItem('ending_at', data.ending_at ? data.ending_at : 0);
+                if(data.paused) {
+                    timer.textContent = updateSeconds(data.ending_at - (data.current_time));
+                    return;
+                }
+                timer.textContent = updateSeconds(data.ending_at - (Math.round(Date.now() / 1000)));
+            }).catch(() => console.log("Error while fetching timer!"));
+    }
+
+    function update() {
+        const timer = document.querySelector("span");
+        if(localStorage.getItem('ending_at') <= (Math.round(Date.now() / 1000))) {
+            timer.textContent = "Zeit abgelaufen!"
+            localStorage.setItem('paused', "true");
+            localStorage.setItem('paused_for', "0");
+            localStorage.setItem('ending_at', "0");
+        }
+        if(localStorage.getItem('paused') === "true")
+            return;
+        timer.textContent = updateSeconds(parseInt(localStorage.getItem('ending_at')) - Math.round(Date.now() / 1000));
+    }
+
+    function updateSeconds(seconds) {
+        const minutes = Math.floor(seconds / 60);
+        const remainingSeconds = seconds % 60;
+        return `${minutes < 10 ? "0" : ""}${minutes}:${remainingSeconds < 10 ? "0" : ""}${remainingSeconds}`;
+    }
+    setInterval(update, 200);
+    setInterval(updateApi, 900);
+</script>
+<span>
+    ??:??
+</span>

@@ -93,4 +93,26 @@ class OverlayController extends AbstractController
         ]);
     }
 
+    #[Route('/timer', name: 'app_timer_overlay')]
+    public function app_timer_overlay(EntityManagerInterface $entityManager): Response
+    {
+        $ending_at = $entityManager->getRepository(GlobalSetting::class)->findOneBy(["name" => "timer_ending_at"])->getValue();
+        $paused_at = $entityManager->getRepository(GlobalSetting::class)->findOneBy(["name" => "timer_paused_at"])->getValue();
+        $timer_last_seconds = $entityManager->getRepository(GlobalSetting::class)->findOneBy(["name" => "timer_last_seconds"])->getValue();
+        $real_ending_at = $paused_at == null ? $ending_at : ($ending_at + (time() - $paused_at));
+
+        return $this->render('timer_overlay.html.twig', [
+            'ending_at' => $real_ending_at,
+            'paused' => $paused_at != null,
+            'paused_for' => $paused_at != null ? time() - $paused_at : 0,
+            'last_seconds' => $timer_last_seconds,
+            'current_time' => time(),
+            'color' => empty($_GET["color"]) ? null : ($_GET['color'] == "standard" ? null : $_GET['color']),
+            'font_family' => empty($_GET["font_family"]) ? null : ($_GET['font_family'] == "standard" ? null : $_GET['font_family']),
+            'font_size' => empty($_GET["font_size"]) ? null : ($_GET['font_size'] == "standard" ? null : $_GET['font_size']),
+            'font_weight' => empty($_GET["font_weight"]) ? null : ($_GET['font_weight'] == "standard" ? null : $_GET['font_weight']),
+            'float' => empty($_GET["float"]) ? null : ($_GET['float'] == "standard" ? null : $_GET['float']),
+        ]);
+    }
+
 }

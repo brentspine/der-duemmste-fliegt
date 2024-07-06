@@ -13,6 +13,7 @@ use Symfony\Bridge\Doctrine\Attribute\MapEntity;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 
@@ -215,7 +216,6 @@ class AdminAjaxController extends AbstractController
         return new JsonResponse($r, 200);
     }
 
-    // Add question
     #[Route('/ajax/add_question', name: 'app_ajax_add_question', methods: ['POST'])]
     public function app_ajax_add_question(UserValidatorService $userValidatorService, Request $request, EntityManagerInterface $entityManager): Response
     {
@@ -266,6 +266,103 @@ class AdminAjaxController extends AbstractController
                 'answer' => $question->getAnswer()
             ];
         }
+        return new JsonResponse($r, 200);
+    }
+
+
+    #[Route('/ajax/timer/{action}', name: 'app_ajax_timer_action')]
+    public function app_ajax_start_timer(string $action, EntityManagerInterface $entityManager, Request $request, UserValidatorService $userValidatorService): Response
+    {
+        $auth = $request->cookies->get("Authorization");
+        $user = $userValidatorService->checkUser($auth);
+        if ($user instanceof Response) return $user;
+        if ($user->getId() >= 2) return new Response("Fehler, keine Berechtigungen", 403);
+
+        // Get current time
+        $ending_at_optional = $entityManager->getRepository(GlobalSetting::class)->findOneBy(["name" => "timer_ending_at"]);
+        if($ending_at_optional == null) {
+            $ending_at = null;
+            $paused_at = null;
+            $timer_last_seconds = 180;
+
+            $ending_at_optional = new GlobalSetting();
+            $ending_at_optional->setName("timer_ending_at");
+            $ending_at_optional->setValue($ending_at);
+            $entityManager->persist($ending_at_optional);
+
+            $paused_at_optional = new GlobalSetting();
+            $paused_at_optional->setName("timer_paused_at");
+            $paused_at_optional->setValue($paused_at);
+            $entityManager->persist($paused_at_optional);
+
+            $timer_last_seconds_optional = new GlobalSetting();
+            $timer_last_seconds_optional->setName("timer_last_seconds");
+            $timer_last_seconds_optional->setValue($timer_last_seconds);
+            $entityManager->persist($timer_last_seconds_optional);
+
+            $entityManager->flush();
+        }
+        else {
+            $ending_at = $ending_at_optional->getValue();
+            $paused_at = $entityManager->getRepository(GlobalSetting::class)->findOneBy(["name" => "timer_paused_at"])->getValue();
+            $timer_last_seconds = $entityManager->getRepository(GlobalSetting::class)->findOneBy(["name" => "timer_last_seconds"])->getValue();
+        }
+        if ($ending_at == null) $ending_at = 0;
+        $real_ending_at = $paused_at == null ? $ending_at : ($ending_at + (time() - $paused_at));
+
+        switch ($action) {
+            case "start":
+                if(empty($_GET["seconds"]))
+                    return new JsonResponse(["message" => "Fehler, keine Sekunden angegeben (GET:seconds)", "error" => true], 400);
+                // if ($real_ending_at > time()) return new JsonResponse(["message" => "Fehler, Timer l&auml;uft bereits", "error" => true], 400);
+                $seconds = intval($_GET["seconds"]);
+                $ending_at = time() + $seconds;
+                $paused_at = null;
+                $timer_last_seconds = $seconds;
+                $message = "Timer wurde für {$seconds} Sekunden gestartet";
+                break;
+            case "pause":
+                // When pausing: 1. Pause
+                if ($real_ending_at <= time()) return new JsonResponse(["message" => "Fehler, Timer l&auml;uft nicht", "error" => true], 400);
+                if ($paused_at != null) return new JsonResponse(["message" => "Fehler, Timer bereits pausiert", "error" => true], 400);
+                $paused_at = time();
+                $message = "Timer wurde pausiert";
+                break;
+            case "resume":
+                // When resuming: 1. Resume
+                if ($paused_at == null) return new JsonResponse(["message" => "Fehler, Timer nicht pausiert", "error" => true], 400);
+                $ending_at = $ending_at + (time() - $paused_at);
+                $paused_at = null;
+                $message = "Timer wurde fortgesetzt";
+                break;
+            case "reset":
+                // When resetting: 1. Reset
+                $ending_at = time() + $timer_last_seconds;
+                $paused_at = time();
+                $message = "Timer wurde zur&uuml;ckgesetzt";
+                break;
+            case "stop":
+                // When stopping: 1. Stop
+                $ending_at = null;
+                $paused_at = null;
+                $message = "Timer wurde gestoppt";
+                break;
+            default:
+                return new JsonResponse(["message" => "Fehler, unbekannte Aktion (start;pause;reset;resume)", "error" => true], 400);
+        }
+        $entityManager->getRepository(GlobalSetting::class)->findOneBy(["name" => "timer_ending_at"])->setValue($ending_at);
+        $entityManager->getRepository(GlobalSetting::class)->findOneBy(["name" => "timer_paused_at"])->setValue($paused_at);
+        // For suggesting new start time
+        $entityManager->getRepository(GlobalSetting::class)->findOneBy(["name" => "timer_last_seconds"])->setValue($timer_last_seconds);
+        $entityManager->flush();
+
+        $r = [];
+        $r["error"] = false;
+        $r["message"] = $message;
+        $r["ending_at"] = $ending_at;
+        $r["paused_at"] = $paused_at;
+        $r["paused"] = $paused_at != null;
+        $r["timer_last_seconds"] = $timer_last_seconds;
         return new JsonResponse($r, 200);
     }
 

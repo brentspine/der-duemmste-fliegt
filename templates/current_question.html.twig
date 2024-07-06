@@ -23,10 +23,10 @@
                         question.textContent = "Buchstabiere das Wort ??? (AntiCheat, deshalb wird die Frage nicht angezeigt)";
                     else
                         question.textContent = data.text;
-                    update();
-                }).catch(() => update());
+
+                }).catch(() => console.log("Error while fetching current question!"));
         }
-        update();
+        setInterval(update, 900);
     </script>
 </head>
 <body>

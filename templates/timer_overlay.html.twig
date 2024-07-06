@@ -1,0 +1,10 @@
+<style>
+    #live-timer {
+        color: {{ color == null ? 'white' : color }}!important;
+        font-family: {{ font_family == null ? "Times New Roman" : font_family }}, serif!important;
+        font-size: {{ font_size == null ? "24px" : font_size }}!important;
+        font-weight: {{ font_weight == null ? "bold" : font_weight }}!important;
+        float: {{ float == null ? "right" : float }}!important;
+    }
+</style>
+{% include 'timer.html.twig' %}
