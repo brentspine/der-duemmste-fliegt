@@ -473,7 +473,7 @@
                 minutes_element.hide();
                 seconds_element.hide();
                 timer_input_sep.hide();
-                $("#toggle-timer").html("Resume");
+                $("#toggle-timer").html("Pause");
             }).fail(function(jqXHR, status, error) {
                 data = JSON.parse(jqXHR.responseText);
                 show_toast(data.message, "red", 1500, true);
