@@ -531,7 +531,7 @@
         $("#reset-timer").click(function() {
             $.post("{{ path('app_ajax_timer_action', {'action': 'reset'}) }}", function(data, status, jqXHR) {
                 show_toast(data.message, "green", 1500, true);
-                $("#toggle-timer").html("Pause");
+                $("#toggle-timer").html("Resume");
             }).fail(function(jqXHR, status, error) {
                 data = JSON.parse(jqXHR.responseText);
                 show_toast(data.message, "red", 1500, true);
@@ -541,7 +541,7 @@
         $("#stop-timer").click(function() {
             $.post("{{ path('app_ajax_timer_action', {'action': 'stop'}) }}", function(data, status, jqXHR) {
                 show_toast(data.message, "green", 1500, true);
-                $("#toggle-timer").html("Pause");
+                $("#toggle-timer").html("Resume");
             }).fail(function(jqXHR, status, error) {
                 data = JSON.parse(jqXHR.responseText);
                 show_toast(data.message, "red", 1500, true);
