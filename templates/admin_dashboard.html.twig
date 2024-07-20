@@ -462,7 +462,7 @@
             const minutes = minutes_element.val();
             const seconds = seconds_element.val();
             if(minutes === "" || seconds === "") {
-                show_toast("Bitte geben Sie Minuten und Sekunden ein", "red", 1500, true);
+                show_toast("Bitte gebe Minuten und Sekunden ein", "red", 1500, true);
                 return;
             }
             const total_seconds = parseInt(minutes) * 60 + parseInt(seconds);

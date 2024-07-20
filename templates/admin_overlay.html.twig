@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Overlay</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            height: {{ height }}px;
+            display: flex;
+            align-items: flex-start;
+            justify-content: flex-end;
+            flex-direction: column;
+        }
+    </style>
+</head>
+<body>
+    <div id="info" class="row">
+        <div id="img">
+            <img src="{{ (creator.img|length > 0) ? asset(creator.img) : asset('/images/standard_profile.svg') }}" alt="{{ creator.name }}">
+        </div>
+        <span id="name" class="text">/brentspine</span>
+        <div id="lives">
+            Spielleiter
+        </div>
+    </div>
+</body>
+</html>

@@ -24,6 +24,13 @@ class OverlayController extends AbstractController
         #$user = $userValidatorService->checkUser($auth);
         #if($user instanceof Response) return $user;
 
+        if($creator->getId() <= 1) {
+            return $this->render('admin_overlay.html.twig', [
+                'width' => 500,
+                'height' => 160
+            ]);
+        }
+
         # Get the global setting "show_votes"
         $show_votes = $entityManager->getRepository(GlobalSetting::class)->findOneBy(["name" => "show_votes"])->getValue() == "1";
 
