@@ -27,7 +27,8 @@ class OverlayController extends AbstractController
         if($creator->getId() <= 1) {
             return $this->render('admin_overlay.html.twig', [
                 'width' => 500,
-                'height' => 160
+                'height' => 160,
+                'creator' => $creator
             ]);
         }
 
