@@ -9,10 +9,75 @@
             padding: 0;
             height: {{ height }}px;
             display: flex;
-            /*width: {{width }}px;*/
+            /*width: {{ width }}px;*/
             align-items: flex-start;
             justify-content: flex-end;
             flex-direction: column;
+        }
+        #lives,
+        .row {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 80px;
+        }
+
+        #info {
+
+        }
+
+        #img {
+            height: 80px;
+            width: 80px;
+            margin-right: 10px;
+        }
+
+        #img img {
+            border-radius: 50%;
+            max-height:100%; max-width:100%;
+        }
+
+        .text {
+            border-radius: 20px;
+            background-color: rgba(128, 128, 128, 0.8);
+            padding: 8px 16px;
+            color: white;
+            font-size: 32px;
+        }
+
+        #name {
+            margin-right: 12px;
+            background-color: unset!important;
+            font-size: 38px;
+        }
+
+        .heart,
+        .zero_heart {
+            height: 40px;
+            width: 40px;
+            padding: 0 6px;
+        }
+
+        .fill-img {
+            max-height:100%; max-width:100%;
+        }
+
+        #votes-container,
+        #votes {
+            margin-top: 0px;
+        }
+
+        .hand-raise {
+            height: 30px;
+            width: 30px;
+            margin-right: 7px;
+        }
+        .voted-for {
+            display: flex;
+            align-items: center;
+        }
+        .voted-by {
+            margin-left: 8px;
         }
     </style>
 </head>
@@ -22,9 +87,11 @@
             <img src="{{ (creator.img|length > 0) ? asset(creator.img) : asset('/images/standard_profile.svg') }}" alt="{{ creator.name }}">
         </div>
         <span id="name" class="text">/brentspine</span>
-        <div id="lives">
+    </div>
+    <div id="votes-container" class="row">
+        <span class="text voted-by">
             Spielleiter
-        </div>
+        </span>
     </div>
 </body>
 </html>
